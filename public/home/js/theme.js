@@ -143,7 +143,9 @@ $('.collect').click(function(){
 	}else{
 		return;
 	}   	
-})
+});
+
+
 
 // 微信二维码浮入
 var weixinTimer = null;

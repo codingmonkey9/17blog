@@ -23,8 +23,16 @@
     {{--header start--}}
     @include('home.public.header')
     {{--header end--}}
+
+    {{--个人中心start--}}
+    @section('userInfo')
+    @show
+    {{--个人中心start--}}
+
     <!-- Main Wrap -->
         @section('main-wrap')
+
+
 
             {{--右侧边栏 start--}}
             @include('home.public.aside')

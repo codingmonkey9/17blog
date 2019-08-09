@@ -2,7 +2,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="nav-wrap">
         <div class="logo-title">
-            <a href="http://www.boke.com" alt="{{config('webconfig.web_title')}}" title="{{config('webconfig.web_title')}}"> {{config('webconfig.web_title')}} </a>
+            <a href="{{url('/home/index')}}" alt="{{config('webconfig.web_title')}}" title="{{config('webconfig.web_title')}}"> {{config('webconfig.web_title')}} </a>
         </div>
         <!-- Toggle menu -->
         <div class="toggle-menu">

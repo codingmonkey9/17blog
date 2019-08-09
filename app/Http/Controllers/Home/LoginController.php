@@ -25,16 +25,7 @@ class LoginController extends Controller
     {
         $input = $request->except('_token');
         //判断用户是否之前勾选了记住密码
-        // if(isset($input['rememberme'])){
-        //     //记住密码
-        //     $timeout = time()+3600*24*30; //过期时间
-        //     setcookie('user_name',$input['user_name'],$timeout);
-        //     setcookie('user_pass',$input['user_pass'],$timeout);
-        // }else{
-        //     //没有勾选记住密码
-        //     setcookie('user_name','',time()-1);
-        //     setcookie('user_pass','',time()-1);
-        // }
+        
 
         //查询数据库是否有此用户，并且要激活了才能登录
         $user = HomeUser::where([['user_name',$input['user_name']],['active',1]])->first();
@@ -43,7 +34,7 @@ class LoginController extends Controller
         }
         $password = Crypt::decrypt($user['user_pass']);
         if($password != $input['user_pass']){
-            return redirect('/home/login')->with('msg','密碼錯誤');
+            return redirect('/home/login')->with('msg','密码错误');
         }
         //把信息存到session
         session()->put('homeuser',$user);
@@ -86,12 +77,14 @@ class LoginController extends Controller
         $similar = Article::where('cate_id',$art->cate_id)->take(4)->get();
         // 文章评论
         $comment = Comment::where('post_id',$art->art_id)->get();
+        //统计当前文章的评论数量
+        $comment_num = Comment::where('post_id',$art->art_id)->count();
         //发表文章距离当前时间
         $time = (time()-$art->art_time);
         //查询文章是否已被收藏
         $uid = session()->get('homeuser')->user_id;
         $res = Collect::where([['uid',$uid],['art_id',$art->art_id]])->first();
-    	return view('home/detail',compact('art','pre','next','similar','comment','time','res'));
+    	return view('home/detail',compact('art','pre','next','similar','comment','time','res','comment_num'));
     }
 
     //收藏
@@ -156,6 +149,7 @@ class LoginController extends Controller
     public function email(Request $request)
     {
         $input = $request->except('_token');
+        $domain = $request->server('HTTP_HOST');
         //先判断此邮箱是否已经注册并激活
         $u = HomeUser::where([['user_name',$input['user_name']],['active',1]])->first();
         // dd($u);
@@ -171,7 +165,7 @@ class LoginController extends Controller
         $input['expire'] = time()+3600*24;
         $user = HomeUser::create($input);
         if($user){
-            Mail::send('email.active',['user'=>$user],function($msg)use($user){
+            Mail::send('email.active',['user'=>$user,'domain'=>$domain],function($msg)use($user){
                 $msg->to($user->email,$user->name)->subject('激活邮箱');
             });
             return redirect('/home/login')->with('msg','请登录邮箱激活账号');
@@ -201,6 +195,67 @@ class LoginController extends Controller
             return redirect('home/login')->with('msg','账号激活成功');
         }else{
             return '账号激活失败，请检查激活链接或重新注册';
+        }
+    }
+
+    /**
+     *  忘记密码
+     * 
+     */
+    public function forget()
+    {
+        return view('home.forget');
+    }
+
+    //修改密码发送邮件
+    public function editpwd(Request $request)
+    {
+        $email = $request->except('_token');
+        $user = HomeUser::where([['email', $email],['active',1]])->firstOrFail();
+        $domain = $request->server('HTTP_HOST'); //为了邮件模板里的域名是动态的，特传此参数
+        // dd($user);
+        if($user){
+            //用户是使用这个邮箱注册的,可以修改密码,发送邮件
+            Mail::send('email.editpwd',['user'=>$user,'domain'=>$domain],function($msg)use($user){
+                $msg->to($user->email,$user->user_name)->subject('修改密码');
+            });
+            return redirect('/home/login')->with('msg','请登录邮箱修改密码');
+        }else{
+            return redirect('/forget')->with('msg','邮箱不存在，请填写注册账号的邮箱');
+        }
+    }
+
+    //重设密码
+    public function editpassword(Request $request)
+    {
+        $id = $request->input('userid');
+        $token = $request->input('token');
+        // dd($id.$token);
+        $res = HomeUser::where([['user_id',$id],['token',$token]])->firstOrFail();
+        if($res){
+            return view('home.editpwd',compact('id'));
+        }else{
+            return redirect('/forget')->with('msg','无效链接，验证失败，请重试');
+        }
+        
+    }
+
+    //提交新密码
+    public function updatepwd(Request $request)
+    {
+        $user_pass = $request->input('user_pass');
+        $repass = $request->input('repass');
+        $id = $request->input('id');
+        if($user_pass != $repass){
+            return back()->with('msg','两次密码不一致，请重试');
+        }
+        //密码加密
+        $user_pass = Crypt::encrypt($user_pass);
+        $res = HomeUser::where('user_id',$id)->update(['user_id'=>$id,'user_pass'=>$user_pass]);
+        if($res){
+            return redirect('/home/login')->with('msg','修改密码成功'); 
+        }else{
+            return back()->with('msg','修改失败请重试');
         }
     }
 

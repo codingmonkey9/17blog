@@ -76,33 +76,65 @@
 
 <div class="clear"></div>
 <script>
-    // function setCookie(){ //设置cookie
-    //     var loginCode = $("#user_name").val(); //获取用户名信息
-    //     var pwd = $("#user_pass").val(); //获取登陆密码信息
-    //     var checked = $("[name='rememberme']:checked");//获取“是否记住密码”复选框
-    //     console.log(loginCode);
-    //     if(checked){ //判断是否选中了“记住密码”复选框
-    //         $.cookie("user_name",loginCode,time()+3600*24*30);//调用jquery.cookie.js中的方法设置cookie中的用户名
-    //         $.cookie("user_pass",pwd,time()+3600*24*30);//调用jquery.cookie.js中的方法设置cookie中的登陆密码，并使用base64（jquery.base64.js）进行加密
-    //     }else{
-    //         $.cookie("pwd", null);
-    //     }
-    // }
 
+    var is_check;
+
+    $('input[name="rememberme"]').click(function(){
+        // var checked = $('input[name="rememberme"]').attr('checked');//这个不可用，因为是动态添加的，attr获取不到
+        var checked = $("input[type='checkbox']").prop("checked") ;//判断是否勾选
+        if(checked){
+            var name = $('input[name="user_name"]').val();
+            //密码不存在cookie中，不安全，我只获取密码长度，然后伪造一个相同长度的值填充到密码区域
+            var pwd = $('input[name="user_pass"]').val();
+            var pwdlen = pwd.length;
+            //cookie中可以设置一个变量标记是否选中的状态
+            is_check = 1; //当再次登录的时候，若为1，则复选框为勾选状态，填充文本框，若为0则用户手动输入密码等
+            document.cookie = "user_name="+name+",user_pass="+pwd+",is_check="+is_check;
+            // alert(name);
+        }else{
+            is_check = 0;
+            document.cookie = "user_name= ,user_pass= ,is_check="+is_check;//key-value部分不能使用;分割？
+        }
+    });
+
+    //读取cookie，检测是否勾选
+    // var _cookie = document.cookie;
+    // console.log(_cookie);
+    // var username = get_cookie('user_name');
+    // console.log(username);
+    //获取cookie指定值，只能自己分割得到。
+    function get_cookie(key) {
+        var _cookie = document.cookie;
+        var arr = _cookie.split(';')[0].split(',');
+        for(var i=0;i<arr.length;i++){
+            var kv = arr[i].split('=');
+            if(key == kv[0]){
+                //要获取的cookie值的键存在
+                return kv[1];
+            }
+        }
+        //否则不存在
+        return "error";
+    }
 
     function getCookie(){ //获取cookie
-        var loginCode = $.cookie("user_name"); //获取cookie中的用户名
-        var pwd =  $.cookie("pass_word"); //获取cookie中的登陆密码
-        if(pwd){//密码存在的话把“记住用户名和密码”复选框勾选住
-            $("[name='rememberme']").attr("checked","true");
-        }
-        if(loginCode){//用户名存在的话把用户名填充到用户名文本框
-            $("#user_name").val(loginCode);
-        }
-        if(pwd){//密码存在的话把密码填充到密码文本框
-            $("#user_pass").val(pwd);
+        if(get_cookie('is_check') == 1){
+            var name = get_cookie('user_name');
+            var pass = get_cookie('user_pass');
+            //填充信息到表单
+            $('input[name="user_name"]').val(name);
+            $('input[name="user_pass"]').val(pass);
+            $("input[type='checkbox']").prop("checked",'checked');
+        }else{
+            var name = get_cookie('user_name');
+            var pass = get_cookie('user_pass');
+            //填充信息到表单
+            $('input[name="user_name"]').val('');
+            $('input[name="user_pass"]').val('');
+            $("input[type='checkbox']").prop("checked",'');
         }
     }
+
 </script>
 </body>
 </html>
