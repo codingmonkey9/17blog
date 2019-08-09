@@ -1,3 +1,4 @@
+<font size="4" color="orange">这个是有评论功能的博客， 是我最后写的一个博客。</font>
 <p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
 
 <p align="center">
